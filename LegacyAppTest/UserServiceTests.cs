@@ -69,4 +69,44 @@ public class UserServiceTests
         //Assert
         Assert.False(result);
     }
+    
+    [Fact]
+    public void AddUser_Should_Return_True_When_Important_Client_And_Credit_Limit_Is_Bigger_Than_500()
+    {
+        //Arrange
+        var service = new UserService(new FakeClientRepository());
+        
+        //Act
+        var result = service.AddUser("Name", "Smith", "testEmail@pjwstk.edu.pl", new DateTime(1998, 12, 2), 3);
+        
+        //Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void AddUser_Should_Return_False_When_Normal_Client_And_Credit_Limit_Is_Less_Than_500()
+    {
+        //Arrange
+        var service = new UserService(new FakeClientRepository());
+
+        //Act
+        var result = service.AddUser("Name", "Kowalski", "testEmail@pjwstk.edu.pl", new DateTime(1998, 12, 2), 7);
+
+        //Assert
+        Assert.False(result);
+    }
+    
+    [Fact]
+    public void AddUser_Should_Return_True_When_Normal_Client_And_Credit_Limit_Is_Bigger_Than_500()
+    {
+        //Arrange
+        var service = new UserService(new FakeClientRepository());
+
+        //Act
+        var result = service.AddUser("Name", "Kwiatkowski", "testEmail@pjwstk.edu.pl", new DateTime(1998, 12, 2), 5);
+
+        //Assert
+        Assert.True(result);
+    }
+
 }
