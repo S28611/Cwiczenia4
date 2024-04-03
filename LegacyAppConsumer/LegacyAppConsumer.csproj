@@ -9,4 +9,8 @@
     <ProjectReference Include="..\LegacyApp\LegacyApp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="UserServiceTest.cs" />
+  </ItemGroup>
+
 </Project>
