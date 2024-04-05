@@ -10,6 +10,7 @@ namespace LegacyApp
         public UserService(IClientRepository clientRepository)
         {
             _clientRepository = clientRepository;
+            _userCreditService = new UserCreditService();
         }
 
         public UserService(IClientRepository clientRepository, IUserCreditService userCreditService)
@@ -26,27 +27,8 @@ namespace LegacyApp
 
         public bool AddUser(string firstName, string lastName, string email, DateTime dateOfBirth, int clientId)
         {
-            if (string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName))
-            {
-                return false;
-            }
 
-            if (!email.Contains("@") && !email.Contains("."))
-            {
-                return false;
-            }
-
-            var now = DateTime.Now;
-            int age = now.Year - dateOfBirth.Year;
-            if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day)) age--;
-
-            if (age < 21)
-            {
-                return false;
-            }
-            
             var client = _clientRepository.GetById(clientId);
-
             var user = new User
             {
                 Client = client,
@@ -56,31 +38,24 @@ namespace LegacyApp
                 LastName = lastName
             };
 
-            if (client.Type == "VeryImportantClient")
+            if (!user.NameIsNull())
             {
-                user.HasCreditLimit = false;
+                return false;
             }
-            else if (client.Type == "ImportantClient")
+            
+            if (!user.EmailValidation())
             {
-                user.HasCreditLimit = true;// missing part from begin
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    creditLimit = creditLimit * 2;
-                    user.CreditLimit = creditLimit;
-                }
+                return false;
             }
-            else
+            
+            if (!user.OlderThan21(dateOfBirth))
             {
-                user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    user.CreditLimit = creditLimit;
-                }
+                return false;
             }
+            
+            DefineCreditLimit(user,client);
 
-            if (user.HasCreditLimit && user.CreditLimit < 500)
+            if (!ValidateCreditLimitToHave(user))
             {
                 return false;
             }
@@ -99,21 +74,15 @@ namespace LegacyApp
             else if (client.Type == "ImportantClient")
             {
                 user.HasCreditLimit = true;// missing part from begin
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    creditLimit = creditLimit * 2;
-                    user.CreditLimit = creditLimit;
-                }
+                int creditLimit = _userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth); 
+                creditLimit = creditLimit * 2;
+                user.CreditLimit = creditLimit;
             }
             else
             {
                 user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditService())
-                {
-                    int creditLimit = userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth);
-                    user.CreditLimit = creditLimit;
-                }
+                int creditLimit = _userCreditService.GetCreditLimit(user.LastName, user.DateOfBirth); 
+                user.CreditLimit = creditLimit;
             }
         }
 
@@ -123,7 +92,7 @@ namespace LegacyApp
             {
                 return false;
             }
-
+            
             return true;
         }
     }
